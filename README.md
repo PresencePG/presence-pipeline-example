@@ -1,7 +1,7 @@
 Sample Pipeline Worker
 ======================
 
-This repository illustrates the structure expected for a git repository to be
+This repository illustrates the structure expected of a git repository that is
 used in OpenFIDO to execute a Pipeline.
 
 Any git repository that would be executed within OpenFIDO should:
@@ -9,12 +9,12 @@ Any git repository that would be executed within OpenFIDO should:
  * Be a publicly visible github project. Private repositories are not supported
    at this time.
  * Have a shell script called `openfido.sh` in the root of the project. This
-   script should launch your project's particular workload.
+   script should execute your project's particular workload.
 
 openfido.sh
 -----------
 
-The `openfido.sh` is executed within the OpenFIDO pipelines system within a
+`openfido.sh` is executed within the OpenFIDO pipelines system within a
 docker container specified by the user.
  * Any input files supplied through the OpenFIDO system are stored in
    `$OPENFIDO_INPUT` for the `openfido.sh` script to access.
@@ -22,3 +22,104 @@ docker container specified by the user.
      `$OPENFIDO_OUTPUT` directory.
  * If the `openfido.sh` returns a non-zero system code it is considered to have 
    failed.
+
+
+Example
+-------
+
+To use a script within the Pipeline API server you would:
+ * Create a Pipeline.
+ * Create a Pipeline Run.
+ * Check the Pipeline API for the status of the Pipeline Run.
+
+**Create a Pipeline**
+
+An example HTTP request would look like:
+
+    curl -X "POST" "https://pipelines.example.com/v1/pipelines" \
+         -H 'Content-Type: application/json' \
+         -H 'Workflow-API-Key: A_PIPLINES_CLIENT_TOKEN' \
+         -d $'{
+      "docker_image_url": "slacgrip/master",
+      "repository_branch": "master",
+      "name": "sample pipeline worker",
+      "description": "a description of this pipline",
+      "repository_ssh_url": "https://github.com/PresencePG/presence-pipeline-example.git"
+    }'
+
+    # The API would return details about this new Pipeline on success:
+    {
+      "created_at": "2020-09-18T15:53:04.694725",
+      "docker_image_url": "slacgrip/master",
+      "repository_branch": "master",
+      "name": "sample pipeline worker",
+      "description": "a description of this pipline",
+      "repository_ssh_url": "https://github.com/PresencePG/presence-pipeline-example.git"
+      "updated_at": "2020-09-18T15:53:04.694746",
+      "uuid": "A_PIPELINE_UUID"
+    }
+
+Use the `uuid` of this Pipeline to create a Pipeline Run.
+
+**Create a Pipeline Run**
+
+To start a Pipeline Run, supply the required input files for your openfido.sh
+script:
+
+    curl -X "POST" "https://pipelines.example.com/v1/pipelines/A_PIPELINE_UUID/runs" \
+         -H 'Content-Type: application/json' \
+         -H 'Workflow-API-Key: A_PIPLINES_CLIENT_TOKEN' \
+         -d $'{
+      "inputs": [
+        {
+          "name": "example.tmy3",
+          "url": "https://public.example.com/example.tmy3"
+        },
+        {
+          "name": "example.glm",
+          "url": "https://public.example.com/example.glm"
+        },
+        {
+          "name": "config.json",
+          "url": "https://public.example.com/config.json"
+        }
+      ],
+      "callback_url": "https://a_callback.example.com/path"
+    }'
+
+    # On success the Pipeline Run details will be returned to you, and the script
+    # will be executed by the server.
+    {
+      "artifacts": [],
+      "created_at": "2020-09-18T16:14:16.707714",
+      "inputs": [
+        {
+          "name": "example.tmy3",
+          "url": "https://public.example.com/example.tmy3"
+        },
+        {
+          "name": "example.glm",
+          "url": "https://public.example.com/example.glm"
+        },
+        {
+          "name": "config.json",
+          "url": "https://public.example.com/config.json"
+        }
+      ],
+      "sequence": 2,
+      "states": [
+        {
+          "created_at": "2020-09-18T16:14:16.710223",
+          "state": "NOT_STARTED"
+        }
+      ],
+      "uuid": "A_PIPELINE_RUN_UUID"
+    }
+
+
+**Check Pipeline Run Status**
+
+Once a Pipeline Run has been created the Pipeline API can be used to check its
+status:
+ * GET https://pipelines.example.com/v1/pipelines/A_PIPELINE_UUID/runs/A_PIPELINE_RUN_UUID to check the status.
+ * GET https://pipelines.example.com/v1/pipelines/A_PIPELINE_UUID/runs/A_PIPELINE_RUN_UUID/console to see what output was generated when `openfido.sh` executed.
