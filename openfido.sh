@@ -16,3 +16,4 @@ set -x
 
 # sample implementation:
 ls $OPENFIDO_INPUT > $OPENFIDO_OUTPUT/inputfiles.txt
+cp $OPENFIDO_INPUT/* $OPENFIDO_OUTPUT
