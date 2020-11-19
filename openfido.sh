@@ -15,5 +15,6 @@ set -x
 # should be moved into this directory.
 
 # sample implementation:
-ls $OPENFIDO_INPUT > $OPENFIDO_OUTPUT/inputfiles.txt
+ls -alh $OPENFIDO_INPUT > $OPENFIDO_OUTPUT/inputfiles.txt
+shasum $OPENFIDO_INPUT/* > $OPENFIDO_OUTPUT/inputfiles.sha || true
 cp $OPENFIDO_INPUT/* $OPENFIDO_OUTPUT || true
